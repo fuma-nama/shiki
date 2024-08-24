@@ -9,35 +9,25 @@ export interface TransformerNotationMapOptions {
   classActivePre?: string
 }
 
-function escapeRegExp(str: string) {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-}
-
 export function transformerNotationMap(
   options: TransformerNotationMapOptions = {},
   name = '@shikijs/transformers:notation-map',
 ): ShikiTransformer {
   const {
     classMap = {},
-    classActivePre = undefined,
+    classActivePre,
   } = options
-
-  const regex = new RegExp(`\\[!code (${Object.keys(classMap).map(escapeRegExp).join('|')})(:\\d+)?\\]`)
 
   return createCommentNotationTransformer(
     name,
-    function (text, _line, _comment, lines, index) {
-      const result = regex.exec(text)
-      if (!result)
-        return false
-
-      const [_, match, range = ':1'] = result
-      const lineNum = Number.parseInt(range.slice(1), 10)
+    Object.keys(classMap),
+    function (namespace, options, _line, _comment, lines, index) {
+      const lineNum = options.length > 0 ? Number.parseInt(options, 10) : 1
 
       lines
         .slice(index, index + lineNum)
         .forEach((line) => {
-          this.addClassToHast(line, classMap[match])
+          this.addClassToHast(line, classMap[namespace])
         })
       if (classActivePre)
         this.addClassToHast(this.pre, classActivePre)

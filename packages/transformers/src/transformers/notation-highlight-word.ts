@@ -13,7 +13,7 @@ export interface TransformerNotationWordHighlightOptions {
   classActivePre?: string
 }
 
-const regex = /\[!code word:((?:\\.|[^:\]])+)(:\d+)?\]/
+const regex = /(.+?)(:\d+)?$/
 
 export function transformerNotationWordHighlight(
   options: TransformerNotationWordHighlightOptions = {},
@@ -25,19 +25,16 @@ export function transformerNotationWordHighlight(
 
   return createCommentNotationTransformer(
     '@shikijs/transformers:notation-highlight-word',
-    function (text, _line, comment, lines, index) {
-      const result = regex.exec(text)
+    ['word'],
+    function (_namespace, options, _line, comment, lines, index) {
+      const result = regex.exec(options)
       if (!result)
         return false
 
-      let [_, word, range] = result
+      const [_, word, range] = result
       const lineNum = range ? Number.parseInt(range.slice(1), 10) : lines.length
 
-      // escape backslashes
-      word = word.replace(/\\(.)/g, '$1')
-
       lines
-        // Don't include the comment itself
         .slice(index, index + lineNum)
         .forEach(line => highlightWordInLine.call(this, line, comment, word, classActiveWord))
 
@@ -45,6 +42,5 @@ export function transformerNotationWordHighlight(
         this.addClassToHast(this.pre, classActivePre)
       return true
     },
-    true,
   )
 }
